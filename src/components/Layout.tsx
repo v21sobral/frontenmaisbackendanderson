@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "exams", label: "Exames", icon: <NavIcon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12v4M10 14h4" />, roles: ["admin", "attendant", "doctor", "patient"] },
   { id: "doctors", label: "Médicos", icon: <NavIcon d="M4.5 12.5a8 8 0 1015 0 8 8 0 00-15 0zM12 8v4l3 2" />, roles: ["admin", "attendant"] },
   { id: "users", label: "Usuários", icon: <NavIcon d="M12 4a4 4 0 100 8 4 4 0 000-8zM6 20v-1a6 6 0 0112 0v1" />, roles: ["admin"] },
+  { id: "audit", label: "Auditoria", icon: <NavIcon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />, roles: ["admin"] },
   { id: "prontuario", label: "Prontuário", icon: <NavIcon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M12 12h4M12 16h4M8 12h.01M8 16h.01" />, roles: ["doctor", "patient"] },
 ];
 
