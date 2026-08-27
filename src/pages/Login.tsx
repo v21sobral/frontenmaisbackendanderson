@@ -26,7 +26,7 @@ export default function Login({ sysUsers, onLogin }: Props) {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-slate-100 flex flex-col md:items-center md:justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-[100dvh] bg-slate-200 flex flex-col md:items-center md:justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="w-full max-w-md mx-auto md:rounded-3xl md:overflow-hidden md:shadow-2xl flex flex-col flex-1 md:flex-none">
         {/* Top hero */}
         <div className="bg-emerald-600 px-6 pt-14 pb-10 md:pt-10 md:pb-8">
