@@ -1,0 +1,12 @@
+{
+  "title": "Vida + Saúde",
+  "description": "Sistema de gerenciamento de consultas médicas, prontuários e exames, com acesso por perfil para clínicas — agendamento e fluxo de atendimento simplificados.",
+  "language": "pt-BR",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
