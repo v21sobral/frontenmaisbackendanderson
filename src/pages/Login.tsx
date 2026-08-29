@@ -37,7 +37,7 @@ export default function Login({ onLogin }: Props) {
     <div className="min-h-[100dvh] bg-slate-50 md:bg-gray-300 flex flex-col md:items-center md:justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="w-full max-w-md mx-auto md:rounded-3xl md:overflow-hidden md:shadow-2xl flex flex-col flex-1 md:flex-none">
         {/* Top hero */}
-        <div className="bg-emerald-800 px-6 pt-14 pb-10 md:pt-10 md:pb-8">
+        <div className="bg-emerald-700 px-6 pt-14 pb-10 md:pt-10 md:pb-8">
           <div className="flex items-center gap-2.5 mb-6">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <span className="text-white text-sm font-bold tracking-tight" style={{ fontFamily: "Outfit, sans-serif" }}>V+S</span>
@@ -62,7 +62,7 @@ export default function Login({ onLogin }: Props) {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 placeholder="seu@email.com"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring--500 focus:border-transparent"
               />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function Login({ onLogin }: Props) {
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring--500 focus:border-transparent"
               />
             </div>
             {error && (
@@ -80,7 +80,7 @@ export default function Login({ onLogin }: Props) {
             )}
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold py-3.5 rounded-full text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 mt-1"
+              className="w-full bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-semibold py-3.5 rounded-full text-sm transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 mt-1"
             >
               Entrar
             </button>
