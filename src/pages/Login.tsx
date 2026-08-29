@@ -37,7 +37,7 @@ export default function Login({ onLogin }: Props) {
     <div className="min-h-[100dvh] bg-slate-50 md:bg-gray-300 flex flex-col md:items-center md:justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
       <div className="w-full max-w-md mx-auto md:rounded-3xl md:overflow-hidden md:shadow-2xl flex flex-col flex-1 md:flex-none">
         {/* Top hero */}
-        <div className="bg-emerald-600 px-6 pt-14 pb-10 md:pt-10 md:pb-8">
+        <div className="bg-emerald-800 px-6 pt-14 pb-10 md:pt-10 md:pb-8">
           <div className="flex items-center gap-2.5 mb-6">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
               <span className="text-white text-sm font-bold tracking-tight" style={{ fontFamily: "Outfit, sans-serif" }}>V+S</span>
