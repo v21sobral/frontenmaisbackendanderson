@@ -1,12 +1,6 @@
 import express from "express";
 import cors from "cors";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SEED_PATH = path.join(__dirname, "data", "seed.json");
-const DB_PATH = path.join(__dirname, "data", "db.json");
+import { initDb, loadState, saveState } from "./db.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -27,18 +21,6 @@ const EXPECTED_KEYS = [
   "prontuarios",
 ];
 
-function loadState() {
-  if (!fs.existsSync(DB_PATH)) {
-    const seed = fs.readFileSync(SEED_PATH, "utf-8");
-    fs.writeFileSync(DB_PATH, seed);
-  }
-  return JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
-}
-
-function saveState(state) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(state, null, 2));
-}
-
 const app = express();
 
 app.use(
@@ -49,16 +31,16 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, service: "vidamaissaude-backend" });
+  res.json({ ok: true, service: "vidamaissaude-backend", storage: "postgres" });
 });
 
 // Returns the whole application state (patients, doctors, appointments, ...)
-app.get("/api/data", (_req, res) => {
+app.get("/api/data", async (_req, res) => {
   try {
-    res.json(loadState());
+    res.json(await loadState());
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Falha ao ler os dados." });
+    res.status(500).json({ error: "Falha ao ler os dados do banco." });
   }
 });
 
@@ -66,7 +48,7 @@ app.get("/api/data", (_req, res) => {
 // state object every time something changes (simple by design — good
 // enough for a study project; a production app would use per-resource
 // REST endpoints instead).
-app.put("/api/data", (req, res) => {
+app.put("/api/data", async (req, res) => {
   const body = req.body;
   if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "Corpo inválido." });
@@ -77,19 +59,23 @@ app.put("/api/data", (req, res) => {
     }
   }
   try {
-    saveState(body);
+    await saveState(body);
     res.json(body);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Falha ao salvar os dados." });
+    res.status(500).json({ error: "Falha ao salvar os dados no banco." });
   }
 });
 
 // Resets the stored data back to the original seed data.
-app.post("/api/reset", (_req, res) => {
+app.post("/api/reset", async (_req, res) => {
   try {
-    const seed = JSON.parse(fs.readFileSync(SEED_PATH, "utf-8"));
-    saveState(seed);
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const seed = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "seed.json"), "utf-8"));
+    await saveState(seed);
     res.json(seed);
   } catch (err) {
     console.error(err);
@@ -97,6 +83,13 @@ app.post("/api/reset", (_req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend Vida + Saúde rodando em http://localhost:${PORT}`);
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Backend Vida + Saúde rodando em http://localhost:${PORT} (Postgres)`);
+    });
+  })
+  .catch((err) => {
+    console.error("Falha ao conectar/preparar o banco de dados:", err);
+    process.exit(1);
+  });

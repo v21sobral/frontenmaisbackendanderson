@@ -5,7 +5,7 @@ com todos os dados guardados só na memória do navegador — ao dar refresh,
 tudo voltava ao estado inicial.
 
 Foi adicionado um **backend em Node.js/Express** (pasta `server/`) que guarda
-os dados em um arquivo JSON no servidor, e o `DataContext.tsx` do frontend
+os dados em um **banco Postgres**, e o `DataContext.tsx` do frontend
 foi ajustado para buscar e salvar os dados nesse backend automaticamente.
 Nenhuma outra página foi alterada — elas continuam usando `useData()`
 normalmente.
@@ -14,19 +14,24 @@ normalmente.
 
 ```
 /                → frontend (React + Vite)
-/server          → backend (Express + arquivo JSON como "banco de dados")
+/server          → backend (Express + Postgres)
 ```
 
 ## Rodando local
 
 ### 1. Backend
 
+Você precisa de um Postgres rodando (local ou um banco free do Render/Supabase/Neon).
+
 ```bash
 cd server
 npm install
-cp .env.example .env      # opcional, os padrões já funcionam local
+cp .env.example .env      # preencha DATABASE_URL com a connection string do seu Postgres
 npm run dev                # sobe em http://localhost:4000
 ```
+
+Na primeira vez que o servidor sobe, ele cria as tabelas automaticamente e,
+se estiverem vazias, popula com os dados de exemplo de `data/seed.json`.
 
 ### 2. Frontend
 
@@ -56,15 +61,20 @@ era antes, sem persistência), basta deixar `VITE_API_URL` vazio no `.env.local`
 
 O backend expõe 3 rotas simples:
 
-- `GET /api/data` — devolve tudo (pacientes, médicos, consultas, exames, usuários, prontuários) em um único JSON.
-- `PUT /api/data` — recebe o JSON completo e sobrescreve o arquivo salvo.
+- `GET /api/data` — devolve tudo (pacientes, médicos, consultas, exames, usuários, prontuários), lendo das tabelas do Postgres.
+- `PUT /api/data` — recebe o JSON completo e regrava cada tabela (dentro de uma transação: se algo falhar no meio, nada é perdido).
 - `POST /api/reset` — restaura os dados originais (`seed.json`).
 
 O frontend busca esse JSON quando o app abre e, a cada mudança de estado
 (criar/editar/excluir paciente, marcar consulta, etc.), reenvia o JSON
 inteiro pro backend (com um pequeno debounce de 400ms). É uma abordagem
 simples de propósito — ótima pra entender o conceito de front↔back sem
-reescrever as 12 páginas do app com chamadas de API uma a uma.
+reescrever as 12 páginas do app com chamadas de API uma a uma, mesmo os
+dados já estando guardados em tabelas relacionais de verdade (`patients`,
+`doctors`, `appointments`, `exams`, `sys_users`, `prontuarios`).
+
+Diferente de um arquivo JSON local, o Postgres **sobrevive** ao serviço
+"dormir"/reiniciar no Render — só some se você apagar o banco.
 
 ## Deploy online (grátis) — passo a passo
 
@@ -77,13 +87,16 @@ reescrever as 12 páginas do app com chamadas de API uma a uma.
    - **Build Command:** `npm install`
    - **Start Command:** `npm start`
    - **Instance Type:** Free
-4. Nas variáveis de ambiente (**Environment**), adicione depois (passo 3):
-   - `FRONTEND_URL` = a URL que o Vercel vai te dar (ex: `https://seu-app.vercel.app`)
+4. Nas variáveis de ambiente (**Environment**), adicione:
+   - `DATABASE_URL` = a *Internal Database URL* do seu banco Postgres do Render (crie um em **New > PostgreSQL** antes, se ainda não tiver).
+   - `FRONTEND_URL` = a URL que o Vercel vai te dar (ex: `https://seu-app.vercel.app`) — pode deixar em branco por enquanto e voltar depois (passo 3).
 5. Deploy. Anote a URL gerada, algo como `https://vidamaissaude-backend.onrender.com`.
 
-> ⚠️ No plano free do Render, o serviço "dorme" após um tempo sem uso (o
-> primeiro acesso demora ~30s pra acordar) e o disco pode ser resetado em
-> redeploys. Para um projeto de estudo isso é normal e aceitável.
+> ⚠️ O Postgres free do Render expira 30 dias após a criação (mais 14 dias
+> de tolerância antes de apagar os dados de vez). O serviço web em si
+> "dorme" após ~15 min sem uso (o primeiro acesso demora ~30-60s pra
+> acordar) — mas os dados no Postgres não são afetados por isso, só o
+> tempo de resposta da primeira requisição.
 
 ### Passo 2 — Subir o frontend no Vercel
 
