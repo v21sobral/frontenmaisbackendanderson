@@ -90,6 +90,17 @@ const CREATE_TABLES_SQL = `
     content TEXT,
     appointment_id INTEGER
   );
+
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGINT PRIMARY KEY,
+    "timestamp" TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    role TEXT NOT NULL,
+    action TEXT NOT NULL,
+    entity TEXT NOT NULL,
+    target TEXT NOT NULL,
+    detail TEXT
+  );
 `;
 
 // --- Mapeamento entre o formato do front (camelCase, um array por entidade)
@@ -210,4 +221,33 @@ export async function saveState(state) {
   } finally {
     client.release();
   }
+}
+
+// --- Log de auditoria: tabela à parte, append-only (nunca é
+// deletado/regravado por inteiro como as outras — só cresce) ---
+
+export async function loadAuditLog() {
+  const { rows } = await pool.query(
+    `SELECT id, "timestamp", user_name, role, action, entity, target, detail
+     FROM audit_log ORDER BY id DESC LIMIT 500`
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    timestamp: r.timestamp,
+    user: r.user_name,
+    role: r.role,
+    action: r.action,
+    entity: r.entity,
+    target: r.target,
+    ...(r.detail !== null ? { detail: r.detail } : {}),
+  }));
+}
+
+export async function appendAuditEntry(entry) {
+  await pool.query(
+    `INSERT INTO audit_log (id, "timestamp", user_name, role, action, entity, target, detail)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     ON CONFLICT (id) DO NOTHING`,
+    [entry.id, entry.timestamp, entry.user, entry.role, entry.action, entry.entity, entry.target, entry.detail ?? null]
+  );
 }

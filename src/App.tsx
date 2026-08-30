@@ -39,7 +39,7 @@ export interface AuthUser {
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [page, setPage] = useState<Page>("dashboard");
-  const { loading, syncError } = useData();
+  const { loading, saving, syncError } = useData();
 
   if (loading) {
     return (
@@ -97,6 +97,12 @@ export default function App() {
       {syncError && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-700 text-xs px-4 py-2 text-center">
           {syncError}
+        </div>
+      )}
+      {saving && !syncError && (
+        <div className="fixed bottom-4 right-4 z-50 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+          Salvando...
         </div>
       )}
       {renderPage()}

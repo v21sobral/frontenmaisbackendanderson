@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { initDb, loadState, saveState } from "./db.js";
+import { initDb, loadState, saveState, loadAuditLog, appendAuditEntry } from "./db.js";
 
 const PORT = process.env.PORT || 4000;
 
@@ -80,6 +80,30 @@ app.post("/api/reset", async (_req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Falha ao resetar os dados." });
+  }
+});
+
+// Log de auditoria — tabela à parte, só cresce (nunca é sobrescrita por inteiro).
+app.get("/api/audit", async (_req, res) => {
+  try {
+    res.json(await loadAuditLog());
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Falha ao ler o log de auditoria." });
+  }
+});
+
+app.post("/api/audit", async (req, res) => {
+  const entry = req.body;
+  if (!entry || typeof entry !== "object" || !entry.id || !entry.timestamp || !entry.user || !entry.action) {
+    return res.status(400).json({ error: "Registro de auditoria inválido." });
+  }
+  try {
+    await appendAuditEntry(entry);
+    res.status(201).json(entry);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Falha ao gravar o registro de auditoria." });
   }
 });
 

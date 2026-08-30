@@ -39,6 +39,8 @@ interface DataContextValue {
   setProntuarios: React.Dispatch<React.SetStateAction<Prontuario[]>>;
   /** true enquanto o estado inicial ainda está sendo buscado do backend */
   loading: boolean;
+  /** true enquanto uma gravação está em andamento no backend */
+  saving: boolean;
   /** mensagem de erro, se a busca/gravação no backend falhar (null = tudo certo) */
   syncError: string | null;
 }
@@ -72,6 +74,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // Sem backend configurado: não há nada para buscar, então não fica "carregando".
   const [loading, setLoading] = useState(Boolean(API_URL));
+  const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   // Evita que o efeito de salvar (PUT) dispare por causa dos dados que
@@ -115,30 +118,72 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   // 2) Sempre que qualquer parte do estado mudar, reenvia tudo pro backend
   // (com um pequeno debounce, pra não disparar uma requisição por tecla).
+  //
+  // Importante: se o usuário fechar a aba ou trocar de página bem rápido
+  // depois de uma alteração, o debounce abaixo pode não chegar a disparar
+  // a tempo — por isso também "forçamos" o envio imediato (sem esperar o
+  // debounce) quando a aba fica oculta ou está prestes a fechar, usando
+  // fetch com keepalive para a requisição sobreviver ao fechamento.
+  const latestStateRef = useRef({ patients, doctors, appointments, exams, sysUsers, prontuarios });
+  latestStateRef.current = { patients, doctors, appointments, exams, sysUsers, prontuarios };
+
+  const doSave = async (opts?: { keepalive?: boolean }) => {
+    if (!API_URL) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/data`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(latestStateRef.current),
+        keepalive: opts?.keepalive ?? false,
+      });
+      if (!res.ok) throw new Error(`Backend respondeu ${res.status}`);
+      setSyncError(null);
+    } catch (err) {
+      console.error("Falha ao salvar dados no backend:", err);
+      setSyncError("Não foi possível salvar as últimas alterações no servidor.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (!API_URL) return;
     if (!hasLoadedRef.current) return; // ainda não terminou o GET inicial
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/data`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ patients, doctors, appointments, exams, sysUsers, prontuarios }),
-        });
-        if (!res.ok) throw new Error(`Backend respondeu ${res.status}`);
-        setSyncError(null);
-      } catch (err) {
-        console.error("Falha ao salvar dados no backend:", err);
-        setSyncError("Não foi possível salvar as últimas alterações no servidor.");
-      }
-    }, 400);
+    debounceRef.current = setTimeout(() => { doSave(); }, 400);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patients, doctors, appointments, exams, sysUsers, prontuarios]);
+
+  // Flush imediato (sem esperar o debounce) ao esconder a aba, trocar de
+  // aplicativo ou fechar a página — cobre o caso de fechar rápido demais.
+  useEffect(() => {
+    if (!API_URL) return;
+
+    const flush = () => {
+      if (!hasLoadedRef.current) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      doSave({ keepalive: true });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", flush);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", flush);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <DataContext.Provider
@@ -149,7 +194,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         exams, setExams,
         sysUsers, setSysUsers,
         prontuarios, setProntuarios,
-        loading, syncError,
+        loading, saving, syncError,
       }}
     >
       {children}
